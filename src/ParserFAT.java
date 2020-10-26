@@ -95,7 +95,8 @@ public class ParserFAT {
     private static int byteArray2Int(byte[] byteArray) {
         int result = 0;
         for (int i = byteArray.length - 1; i >= 0; i--) {
-            result += byteArray[i] << i * 8;
+            result += (byteArray[i]>=0)?byteArray[i] << i * 8:(255+byteArray[i])<< i * 8;
+
         }
         return result;
     }
