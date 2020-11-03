@@ -1,32 +1,44 @@
+package fat;
+
+import service.ParserHelper;
+
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
-public class RootEntry {
+public class DirEntry {
 
-    private final static LocalDateTime START_TIME = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
+    public final static LocalDateTime START_TIME = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
+    public final static String READ_ONLY="read_only";
+    public final static String HIDDEN="hidden";
+    public final static String SYSTEM="system";
+    public final static String VOLUME_NAME="volume_name";
+    public final static String DIR="dir";
+    public final static String ARCHIVE="archive";
 
     private String fileName;
     private String fileExt;
-    private StringBuilder fileAttributes=new StringBuilder();
+    private List<String> fileAttributes=new ArrayList<>();
     private LocalDateTime creationDateTime;
     private LocalDateTime lastAccessDate;
     private LocalDateTime lastWriteDateTime;
-    private long firstCluster;
+    private int firstCluster;
     private long fileSize;
 
-    RootEntry(byte[] entryBytes) {
+    public DirEntry(byte[] entryBytes) {
         int currentEntryPosition = 0;
         fileName = new String(Arrays.copyOfRange(entryBytes, currentEntryPosition, currentEntryPosition + 8));
         fileExt = new String(Arrays.copyOfRange(entryBytes, currentEntryPosition + 8, currentEntryPosition + 11));
 
         long attributeFlag = ParserHelper.byteArray2Int(Arrays.copyOfRange(entryBytes, currentEntryPosition + 11, currentEntryPosition + 12));
-        if ((attributeFlag & 1) == 1) fileAttributes.append("read_only ");
-        if ((attributeFlag & 2) == 2) fileAttributes.append("hidden ");
-        if ((attributeFlag & 4) == 4) fileAttributes.append("system ");
-        if ((attributeFlag & 8) == 8) fileAttributes.append("volume_name ");
-        if ((attributeFlag & 16) == 16) fileAttributes.append("dir ");
-        if ((attributeFlag & 32) == 32) fileAttributes.append("archive_flag ");
+        if ((attributeFlag & 1) == 1) fileAttributes.add(READ_ONLY);
+        if ((attributeFlag & 2) == 2) fileAttributes.add(HIDDEN);
+        if ((attributeFlag & 4) == 4) fileAttributes.add(SYSTEM);
+        if ((attributeFlag & 8) == 8) fileAttributes.add(VOLUME_NAME);
+        if ((attributeFlag & 16) == 16) fileAttributes.add(DIR);
+        if ((attributeFlag & 32) == 32) fileAttributes.add(ARCHIVE);
 
         long milliSeconds = ParserHelper.byteArray2Int(Arrays.copyOfRange(entryBytes, currentEntryPosition + 13, currentEntryPosition + 14)) * 10;
         byte[] byteTime = Arrays.copyOfRange(entryBytes, currentEntryPosition + 14, currentEntryPosition + 16);
@@ -40,7 +52,7 @@ public class RootEntry {
         byteDate = Arrays.copyOfRange(entryBytes, currentEntryPosition + 24, currentEntryPosition + 26);
         lastWriteDateTime = ParserHelper.byteArray2DateTime(byteTime,byteDate, 0);
 
-        firstCluster = ParserHelper.byteArray2Int(Arrays.copyOfRange(entryBytes, currentEntryPosition + 26, currentEntryPosition + 28));
+        firstCluster = (int) ParserHelper.byteArray2Int(Arrays.copyOfRange(entryBytes, currentEntryPosition + 26, currentEntryPosition + 28));
         fileSize = ParserHelper.byteArray2Int(Arrays.copyOfRange(entryBytes, currentEntryPosition + 28, currentEntryPosition + 32));
     }
 
@@ -52,7 +64,7 @@ public class RootEntry {
         return fileExt;
     }
 
-    public StringBuilder getFileAttributes() {
+    public List<String> getFileAttributes() {
         return fileAttributes;
     }
 
@@ -68,7 +80,7 @@ public class RootEntry {
         return lastWriteDateTime;
     }
 
-    public long getFirstCluster() {
+    public int getFirstCluster() {
         return firstCluster;
     }
 
@@ -84,7 +96,7 @@ public class RootEntry {
                 "\tCreation date/time: " + creationDateTime + "\n" +
                 "\tLast access date: " + lastAccessDate + "\n" +
                 "\tLast write timestamp: " + lastWriteDateTime + "\n" +
-                "\tLast write timestamp: " + firstCluster + "\n" +
-                "\tFile size: " + fileSize/1024+" Kb";
+                "\tFirst cluster: " + firstCluster + "\n" +
+                "\tFile size: " + fileSize/1024+"\n\n";
     }
 }

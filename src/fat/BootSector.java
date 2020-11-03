@@ -1,3 +1,7 @@
+package fat;
+
+import service.ParserHelper;
+
 import javax.xml.bind.DatatypeConverter;
 import java.util.Arrays;
 
@@ -10,7 +14,7 @@ public class BootSector {
     private int numReservedSectors;
     private int numAllocateTables;
     private int maxNumRootEntries;
-    private long numSectors;
+    private int numSectors;
     private String mediaType;
     private int numSectorsPerFAT;
     private int numSectorsPerTrack;
@@ -31,8 +35,8 @@ public class BootSector {
         numReservedSectors = (int) ParserHelper.byteArray2Int(Arrays.copyOfRange(bootSectorBytes, 14, 16));
         numAllocateTables = (int) ParserHelper.byteArray2Int(Arrays.copyOfRange(bootSectorBytes, 16, 17));
         maxNumRootEntries = (int) ParserHelper.byteArray2Int(Arrays.copyOfRange(bootSectorBytes, 17, 19));
-        long numSmallSectors = ParserHelper.byteArray2Int(Arrays.copyOfRange(bootSectorBytes, 19, 21));
-        long numLargeSectors = ParserHelper.byteArray2Int(Arrays.copyOfRange(bootSectorBytes, 32, 36));
+        int numSmallSectors = (int) ParserHelper.byteArray2Int(Arrays.copyOfRange(bootSectorBytes, 19, 21));
+        int numLargeSectors = (int) ParserHelper.byteArray2Int(Arrays.copyOfRange(bootSectorBytes, 32, 36));
         numSectors = ((numSmallSectors == 0) ? numLargeSectors : numSmallSectors);
         mediaType = DatatypeConverter.printHexBinary(Arrays.copyOfRange(bootSectorBytes, 21, 22));
         numSectorsPerFAT = (int) ParserHelper.byteArray2Int(Arrays.copyOfRange(bootSectorBytes, 22, 24));
@@ -77,7 +81,7 @@ public class BootSector {
         return maxNumRootEntries;
     }
 
-    public long getNumSectors() {
+    public int getNumSectors() {
         return numSectors;
     }
 
@@ -127,7 +131,7 @@ public class BootSector {
 
     @Override
     public String toString() {
-        return "BootSector {" +
+        return "fat.BootSector {" +
                 "\n\t03\t8\tOEM Name: " + oemName +
                 "\n\t0B\t2\tSector size: " + sectorSize +
                 "\n\t0D\t1\tCluster size: " + clusterSize +

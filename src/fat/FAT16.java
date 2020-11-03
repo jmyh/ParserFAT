@@ -1,14 +1,45 @@
+package fat;
+
+import fat.BootSector;
+import service.ParserHelper;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class FAT16 {
 
     private BootSector bootSector;
     private RootDir rootDir;
+    private List<Long> allocateTable;
+    int startAllocateTable;
+    int startRootDir;
+    int startClusterArea;
+    byte[] imageBytes;
 
-    FAT16(byte[] imageBytes) {
+
+    public FAT16(byte[] imageBytes) {
+        this.imageBytes=imageBytes;
         bootSector=new BootSector(Arrays.copyOfRange(imageBytes, 0, 512));
-        int shift=(bootSector.getNumOfHiddenSectors()+1+bootSector.getNumAllocateTables()*bootSector.getNumSectorsPerFAT())*512;
-        rootDir=new RootDir(Arrays.copyOfRange(imageBytes, shift, shift+bootSector.getMaxNumRootEntries()*32));
+
+        startAllocateTable=bootSector.getNumReservedSectors();
+        allocateTable=calculateAllocateTable(Arrays.copyOfRange(
+                imageBytes,
+                 startAllocateTable*bootSector.getSectorSize(),
+                (startAllocateTable+bootSector.getNumSectorsPerFAT())*bootSector.getSectorSize()
+        ));
+
+        startRootDir=(bootSector.getNumOfHiddenSectors()+1+bootSector.getNumAllocateTables()*bootSector.getNumSectorsPerFAT());
+        rootDir=new RootDir(Arrays.copyOfRange(
+                imageBytes,
+                startRootDir*bootSector.getSectorSize(),
+                startRootDir*bootSector.getSectorSize()+bootSector.getMaxNumRootEntries()*32)
+        );
+        startClusterArea=startRootDir+(bootSector.getMaxNumRootEntries()*32)/bootSector.getSectorSize();
+    }
+
+    public byte[] getImageBytes() {
+        return imageBytes;
     }
 
     public BootSector getBootSector() {
@@ -17,6 +48,30 @@ public class FAT16 {
 
     public RootDir getRootDir() {
         return rootDir;
+    }
+
+    public List<Long> getAllocateTable() {
+        return allocateTable;
+    }
+
+    public int getStartAllocateTable() {
+        return startAllocateTable;
+    }
+
+    public int getStartRootDir() {
+        return startRootDir;
+    }
+
+    public int getStartClusterArea() {
+        return startClusterArea;
+    }
+
+    private List<Long> calculateAllocateTable(byte[] allocateTableBytes) {
+        List<Long> allocateTable=new ArrayList<>();
+        for (int i = 0; i < allocateTableBytes.length; i+=2) {
+            allocateTable.add(ParserHelper.byteArray2Int(Arrays.copyOfRange(allocateTableBytes,i,i+2)));
+        }
+        return allocateTable;
     }
 
     @Override
